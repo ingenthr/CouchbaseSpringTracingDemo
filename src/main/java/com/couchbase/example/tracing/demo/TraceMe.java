@@ -1,5 +1,6 @@
 package com.couchbase.example.tracing.demo;
 
+import com.couchbase.client.core.tracing.SlowOperationReporter;
 import com.couchbase.client.core.tracing.SlowOperationTracer;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
@@ -34,9 +35,10 @@ public class TraceMe {
         ).getTracer();
 
 
+//        SlowOperationReporter slowOperationReporter = SlowOperationReporter.builder().kvThreshold(10).build();
         CouchbaseEnvironment env =
 //                DefaultCouchbaseEnvironment.builder().tracer(tracer).build();
-                DefaultCouchbaseEnvironment.builder().tracer(new SlowOperationTracer()).build();
+                DefaultCouchbaseEnvironment.builder().tracer(new SlowOperationTracer(SlowOperationReporter.builder().kvThreshold(1).build())).build();
 
                 Cluster cluster = CouchbaseCluster.create(env);
         cluster.authenticate("ingenthr", "letmein");
@@ -49,7 +51,7 @@ public class TraceMe {
 
         try {
             for (int i=1; i<10; i++ ) {
-                System.out.println(bucket.get("u:king_arthur", 1, TimeUnit.MICROSECONDS));
+                System.out.println(bucket.get("u:king_arthur", 2, TimeUnit.MILLISECONDS));
             }
         } catch (Exception e) {
             // don't care
