@@ -1,5 +1,6 @@
 package com.couchbase.example.tracing.demo;
 
+import com.couchbase.client.core.tracing.SlowOperationTracer;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
@@ -31,8 +33,12 @@ public class TraceMe {
                         true, "localhost", 5775, 1000, 10000)
         ).getTracer();
 
-        CouchbaseEnvironment env = DefaultCouchbaseEnvironment.builder().tracer(tracer).build();
-        Cluster cluster = CouchbaseCluster.create(env);
+
+        CouchbaseEnvironment env =
+//                DefaultCouchbaseEnvironment.builder().tracer(tracer).build();
+                DefaultCouchbaseEnvironment.builder().tracer(new SlowOperationTracer()).build();
+
+                Cluster cluster = CouchbaseCluster.create(env);
         cluster.authenticate("ingenthr", "letmein");
         bucket = cluster.openBucket("default");
     }
@@ -41,8 +47,13 @@ public class TraceMe {
     public Greeting greeting(@RequestParam(value="name", defaultValue="World") String name) {
 
 
-
-        System.out.println(bucket.get("u:king_arthur"));
+        try {
+            for (int i=1; i<10; i++ ) {
+                System.out.println(bucket.get("u:king_arthur", 1, TimeUnit.MICROSECONDS));
+            }
+        } catch (Exception e) {
+            // don't care
+        }
 
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
