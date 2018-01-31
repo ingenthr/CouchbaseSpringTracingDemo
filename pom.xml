@@ -25,6 +25,27 @@
 	</properties>
 
 	<dependencies>
+
+		<dependency>
+			<groupId>com.couchbase.client</groupId>
+			<artifactId>core-io</artifactId>
+			<version>1.5.5-tracing-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.couchbase.client</groupId>
+			<artifactId>java-client</artifactId>
+			<version>2.5.5-tracing-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>io.opentracing</groupId>
+			<artifactId>opentracing-api</artifactId>
+			<version>0.31.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.uber.jaeger</groupId>
+			<artifactId>jaeger-core</artifactId>
+			<version>0.23.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-couchbase</artifactId>
@@ -38,6 +59,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.uber.jaeger</groupId>
+			<artifactId>jaeger-core</artifactId>
+			<version>0.23.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.uber.jaeger</groupId>
+			<artifactId>jaeger-core</artifactId>
+			<version>0.23.0</version>
 		</dependency>
 	</dependencies>
 
