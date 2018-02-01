@@ -13,7 +13,7 @@ printf("%s: inserting delay of %d microseconds.\n", $$0, $1);
 delay = $1 * 1000;
 }
 
-syscall::sendmsg:entry
+syscall::send*:entry
 /execname == "memcached"/
 {
 chill(delay);
