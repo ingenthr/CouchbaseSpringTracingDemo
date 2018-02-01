@@ -27,22 +27,32 @@ public class TraceMe {
 //        Configuration config = new Configuration("couchbase", null, null);
 //        config.setStatsFactory(...); // optional if you want to get metrics about tracer behavior
 
-        Tracer tracer = new Configuration(
-                "simple_read_write",
-                new Configuration.SamplerConfiguration("const", 1),
-                new Configuration.ReporterConfiguration(
-                        true, "localhost", 5775, 1000, 10000)
-        ).getTracer();
 
-
-//        SlowOperationReporter slowOperationReporter = SlowOperationReporter.builder().kvThreshold(10).build();
         CouchbaseEnvironment env =
 //                DefaultCouchbaseEnvironment.builder().tracer(tracer).build();
-                DefaultCouchbaseEnvironment.builder().tracer(new SlowOperationTracer(SlowOperationReporter.builder().kvThreshold(1).build())).build();
-
+                DefaultCouchbaseEnvironment.builder().tracer(selectTracer("jaeger")).build();
                 Cluster cluster = CouchbaseCluster.create(env);
         cluster.authenticate("ingenthr", "letmein");
         bucket = cluster.openBucket("default");
+    }
+
+    private Tracer selectTracer(String type) {
+
+
+        if (type.equals("jaeger")) {
+            Tracer tracer = new Configuration(
+                    "simple_read_write",
+                    new Configuration.SamplerConfiguration("const", 1),
+                    new Configuration.ReporterConfiguration(
+                            true, "localhost", 5775, 1000, 10000)
+            ).getTracer();
+            return tracer;
+        } else if (type.equals("slowlog")) {
+            return new SlowOperationTracer(SlowOperationReporter.builder().kvThreshold(100000).build());
+        }
+
+        throw new IllegalArgumentException("Invalid tracer requested");
+
     }
 
     @RequestMapping("/greeting")
@@ -50,11 +60,11 @@ public class TraceMe {
 
 
         try {
-            for (int i=1; i<10; i++ ) {
-                System.out.println(bucket.get("u:king_arthur", 2, TimeUnit.MILLISECONDS));
+            for (int i=0; i<1000; i++) {
+                bucket.get("u:king_arthur", 500, TimeUnit.MILLISECONDS);
             }
-        } catch (Exception e) {
-            // don't care
+        } catch (RuntimeException e) {
+            System.err.println("Hit exception " + e.getMessage() + " of class " + e.getClass());
         }
 
         return new Greeting(counter.incrementAndGet(),
