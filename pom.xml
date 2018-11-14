@@ -29,12 +29,12 @@
 		<dependency>
 			<groupId>com.couchbase.client</groupId>
 			<artifactId>core-io</artifactId>
-			<version>1.5.5-tracing-SNAPSHOT</version>
+			<version>1.7.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.couchbase.client</groupId>
 			<artifactId>java-client</artifactId>
-			<version>2.5.5-tracing-SNAPSHOT</version>
+			<version>2.7.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opentracing</groupId>
@@ -42,9 +42,9 @@
 			<version>0.31.0</version>
 		</dependency>
 		<dependency>
-			<groupId>com.uber.jaeger</groupId>
+			<groupId>io.jaegertracing</groupId>
 			<artifactId>jaeger-core</artifactId>
-			<version>0.23.0</version>
+			<version>0.32.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

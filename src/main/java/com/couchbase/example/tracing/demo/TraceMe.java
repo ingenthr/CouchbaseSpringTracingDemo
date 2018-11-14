@@ -1,7 +1,7 @@
 package com.couchbase.example.tracing.demo;
 
-import com.couchbase.client.core.tracing.SlowOperationReporter;
-import com.couchbase.client.core.tracing.SlowOperationTracer;
+import com.couchbase.client.core.tracing.ThresholdLogReporter;
+import com.couchbase.client.core.tracing.ThresholdLogTracer;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
@@ -40,18 +40,20 @@ public class TraceMe {
 
 
         env =
-//                DefaultCouchbaseEnvironment.builder().tracer(tracer).build();
-                DefaultCouchbaseEnvironment.builder().tracer(selectTracer("jaeger")).build();
+////                DefaultCouchbaseEnvironment.builder().tracer(tracer).build();
+                DefaultCouchbaseEnvironment.builder().tracer(selectTracer("slowlog")).build();
                 Cluster cluster = CouchbaseCluster.create(env);
+//        env = DefaultCouchbaseEnvironment.builder().tracer(selectTracer("slowlog")).build();
         cluster.authenticate("ingenthr", "letmein");
         bucket = cluster.openBucket("travel-sample");
+
+
     }
 
     private Tracer selectTracer(String type) {
-
-
+        Tracer tracer;
         if (type.equals("jaeger")) {
-            Tracer tracer = new Configuration(
+            tracer = new Configuration(
                     "simple_read_write",
                     new Configuration.SamplerConfiguration("const", 1),
                     new Configuration.ReporterConfiguration(
@@ -59,11 +61,10 @@ public class TraceMe {
             ).getTracer();
             return tracer;
         } else if (type.equals("slowlog")) {
-            return new SlowOperationTracer(SlowOperationReporter.builder().kvThreshold(100).build());
+            tracer = ThresholdLogTracer.create(ThresholdLogReporter.builder().kvThreshold(100, TimeUnit.MILLISECONDS).build());
+            return tracer;
         }
-
-        throw new IllegalArgumentException("Invalid tracer requested");
-
+        throw new IllegalArgumentException("Invalid tracer requested.");
     }
 
     @RequestMapping("/greeting")
@@ -103,14 +104,14 @@ public class TraceMe {
                 .startActive(true);
 
         bucket.async()
-                .query(N1qlQuery.simple("select meta().id as id from `travel-sample` where type = \"route\" limit 1000"), scope.span())
+                .query(N1qlQuery.simple("select meta().id as id from `travel-sample` where type = \"route\" limit 1000")/* , scope.span() */)
                 .flatMap(new Func1<AsyncN1qlQueryResult, Observable<AsyncN1qlQueryRow>>() {
                     public Observable<AsyncN1qlQueryRow> call(AsyncN1qlQueryResult result) {
                         return result.rows();
                     }
                 }).flatMap(new Func1<AsyncN1qlQueryRow, Observable<JsonDocument>>() {
             public Observable<JsonDocument> call(AsyncN1qlQueryRow row) {
-                return bucket.async().get(row.value().getString("id"), scope.span(), JsonDocument.class);
+                return bucket.async().get(row.value().getString("id"), /* scope.span(), */ JsonDocument.class);
             }
         })
                 .toBlocking()
