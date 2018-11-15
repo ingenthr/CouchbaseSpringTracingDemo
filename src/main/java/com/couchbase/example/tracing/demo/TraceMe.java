@@ -14,6 +14,8 @@ import com.couchbase.client.java.query.N1qlQuery;
 import com.uber.jaeger.Configuration;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -97,11 +99,11 @@ public class TraceMe {
     }
 
     @RequestMapping("/itineraries")
-    public List itineraries() {
+    public ResponseEntity itineraries() {
         final Scope scope = env.tracer()
                 .buildSpan("query-and-fetch")
                 .startActive(true);
-        List<JsonDocument> res = bucket.async().query(N1qlQuery.simple("select meta().id as id from `travel-sample` where type = \"route\" limit 10"))
+        List<String> res = bucket.async().query(N1qlQuery.simple("select meta().id as id from `travel-sample` where type = \"route\" limit 10"))
                 .flatMap(new Func1<AsyncN1qlQueryResult, Observable<AsyncN1qlQueryRow>>() {
                     public Observable<AsyncN1qlQueryRow> call(AsyncN1qlQueryResult result) {
                         return result.rows();
@@ -111,9 +113,14 @@ public class TraceMe {
                         env.tracer().scopeManager().activate(scope.span(), false);
                         return bucket.async().get(row.value().getString("id"), JsonDocument.class);
                     }
-                }).toList().toBlocking().single();
+                }).map(new Func1<JsonDocument, String>() {
+                    public String call(JsonDocument doc) {
+                        return doc.content().toString();
+                    }
+                })
+                .toList().toBlocking().single();
         scope.close();
-        return res;
+        return new ResponseEntity<Object>(res, HttpStatus.OK);
     }
 
     @RequestMapping("/airportInfo")
