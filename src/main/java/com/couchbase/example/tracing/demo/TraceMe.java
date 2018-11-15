@@ -39,11 +39,8 @@ public class TraceMe {
 //        config.setStatsFactory(...); // optional if you want to get metrics about tracer behavior
 
 
-        env =
-////                DefaultCouchbaseEnvironment.builder().tracer(tracer).build();
-                DefaultCouchbaseEnvironment.builder().tracer(selectTracer("slowlog")).build();
+        env = DefaultCouchbaseEnvironment.builder().tracer(selectTracer("jaeger")).build();
                 Cluster cluster = CouchbaseCluster.create(env);
-//        env = DefaultCouchbaseEnvironment.builder().tracer(selectTracer("slowlog")).build();
         cluster.authenticate("ingenthr", "letmein");
         bucket = cluster.openBucket("travel-sample");
 
