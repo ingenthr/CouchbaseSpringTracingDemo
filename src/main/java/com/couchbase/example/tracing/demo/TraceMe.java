@@ -39,7 +39,9 @@ public class TraceMe {
 //        config.setStatsFactory(...); // optional if you want to get metrics about tracer behavior
 
 
-        env = DefaultCouchbaseEnvironment.builder().tracer(selectTracer("jaeger")).build();
+        env = DefaultCouchbaseEnvironment.builder().tracer(selectTracer("jaeger"))
+                .propagateParentSpan(true)
+                .build();
                 Cluster cluster = CouchbaseCluster.create(env);
         cluster.authenticate("ingenthr", "letmein");
         bucket = cluster.openBucket("travel-sample");
@@ -99,24 +101,19 @@ public class TraceMe {
         final Scope scope = env.tracer()
                 .buildSpan("query-and-fetch")
                 .startActive(true);
-
-        bucket.async()
-                .query(N1qlQuery.simple("select meta().id as id from `travel-sample` where type = \"route\" limit 1000")/* , scope.span() */)
+        List<JsonDocument> res = bucket.async().query(N1qlQuery.simple("select meta().id as id from `travel-sample` where type = \"route\" limit 10"))
                 .flatMap(new Func1<AsyncN1qlQueryResult, Observable<AsyncN1qlQueryRow>>() {
                     public Observable<AsyncN1qlQueryRow> call(AsyncN1qlQueryResult result) {
                         return result.rows();
                     }
                 }).flatMap(new Func1<AsyncN1qlQueryRow, Observable<JsonDocument>>() {
-            public Observable<JsonDocument> call(AsyncN1qlQueryRow row) {
-                return bucket.async().get(row.value().getString("id"), /* scope.span(), */ JsonDocument.class);
-            }
-        })
-                .toBlocking()
-                .last();
-
+                    public Observable<JsonDocument> call(AsyncN1qlQueryRow row) {
+                        env.tracer().scopeManager().activate(scope.span(), false);
+                        return bucket.async().get(row.value().getString("id"), JsonDocument.class);
+                    }
+                }).toList().toBlocking().single();
         scope.close();
-        // n1ql query for what I want to see
-        return new ArrayList();
+        return res;
     }
 
     @RequestMapping("/airportInfo")
